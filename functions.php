@@ -27,32 +27,71 @@ function h($str)
 {
     // ENT_QUOTES: シングルクオートとダブルクオートを共に変換する。
     return htmlspecialchars($str, ENT_QUOTES, 'UTF-8');
-} 
+}
 
-function find_task_by_done($status){
+// タスク登録時のバリデーション
+function insert_validate($title)
+{
+    // 初期化
+    $errors = [];
+
+    if (empty($title)) {
+        $errors[] = MSG_TITLE_REQUIRED;
+    }
+
+    return $errors;
+}
+
+// タスク登録
+function insert_task($title)
+{
+    // データベースに接続
     $dbh = connect_db();
 
-/* タスク照会
----------------------------------------------*/
-// done を抽出条件に指定してデータを取得
-$sql = <<<EOM
-SELECT
-    *
-FROM
-    tasks
-WHERE
-    done = :status;
-EOM;
+    // レコードを追加
+    $sql = <<<EOM
+    INSERT INTO
+        tasks
+        (title)
+    VALUES
+        (:title)
+    EOM;
 
-// プリペアドステートメントの準備
-$stmt = $dbh->prepare($sql);
+    // プリペアドステートメントの準備
+    $stmt = $dbh->prepare($sql);
 
-// パラメータのバインド
-$stmt->bindValue(':status', $status, PDO::PARAM_INT);
+    // パラメータのバインド
+    $stmt->bindValue(':title', $title, PDO::PARAM_STR);
 
-// プリペアドステートメントの実行
-$stmt->execute();
-
-// 結果の取得
-return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    // プリペアドステートメントの実行
+    $stmt->execute();
 }
+
+function find_task_by_done($status)
+{
+    $dbh = connect_db();
+
+    /* タスク照会
+---------------------------------------------*/
+    // done を抽出条件に指定してデータを取得
+    $sql = <<<EOM
+    SELECT
+        *
+    FROM
+        tasks
+    WHERE
+        done = :status;
+    EOM;
+
+    // プリペアドステートメントの準備
+    $stmt = $dbh->prepare($sql);
+
+    // パラメータのバインド
+    $stmt->bindValue(':status', $status, PDO::PARAM_INT);
+
+    // プリペアドステートメントの実行
+    $stmt->execute();
+
+    // 結果の取得
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+} 
